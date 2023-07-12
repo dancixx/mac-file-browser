@@ -1,3 +1,4 @@
+use chrono::{Local, TimeZone};
 use disks::{Disk, DiskKindWrapper};
 use entries::Entry;
 use sysinfo::{DiskExt, System, SystemExt};
@@ -45,12 +46,39 @@ async fn get_folder_items(path: String) -> Vec<Entry> {
         let mut entry = Entry::new();
         let pathname = path.unwrap().path();
         let metadata = pathname.metadata().unwrap();
+        let extension = match pathname.extension() {
+            Some(extension) => extension.to_str().unwrap().to_string(),
+            None => "".to_string(),
+        };
+        let size = metadata.len();
+        let modified = metadata
+            .modified()
+            .unwrap()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let converted_time = Local.timestamp_opt(modified as i64, 0).unwrap();
+        let current_time = Local::now();
+        let time_diff = current_time
+            .signed_duration_since(converted_time)
+            .num_days();
+
+        let formatted_time = match time_diff {
+            diff if diff < 1 => format!("today {}", converted_time.format("%H:%M")),
+            diff if diff < 2 => format!("yesterday {}", converted_time.format("%H:%M")),
+            _ => format!("{}", converted_time.format("%Y-%m-%d %H:%M")),
+        };
+
         let pathname = pathname.to_str().unwrap().to_string();
         let name = pathname.split("/").last().unwrap().to_string();
 
         entry.is_dir = Some(metadata.is_dir());
         entry.is_hidden = Some(name.starts_with("."));
+        entry.name = Some(name);
         entry.path = Some(pathname);
+        entry.extension = Some(extension);
+        entry.size = Some(size);
+        entry.modified = Some(formatted_time);
         items.push(entry);
     }
 

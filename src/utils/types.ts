@@ -11,4 +11,8 @@ export type TEntry = {
   path: string;
   is_dir: boolean;
   is_hidden: boolean;
+  extension: string;
+  size: number;
+  modified: string;
+  name: string;
 };

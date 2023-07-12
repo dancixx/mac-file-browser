@@ -10,7 +10,7 @@ const Layout: FC<PropsWithChildren> = ({ children }) => {
   const [showHidden, setShowHidden] = useAtom(showHiddenAtom);
 
   return (
-    <div className="p-4">
+    <div className="p-4 font-poppins">
       <div className="flex flex-row items-center gap-4 mb-4 justify-between text-xs">
         <div className="flex w-1/2 flex-row items-center justify-start gap-1 relative truncate">
           <button onClick={() => navigate(-1)} className="hover:bg-gray-200 rounded-full p-1">
