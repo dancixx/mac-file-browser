@@ -13,25 +13,29 @@ const Folder: FC = () => {
   const items = useAsync(async () => await get_folder_items(state.path), [state.path]);
   const showHidden = useAtomValue(showHiddenAtom);
 
-  return items.value
-    ?.filter((item) => (showHidden ? true : !item.is_hidden))
-    .map((item, idx) => (
-      <button
-        disabled={!item.is_dir}
-        key={idx}
-        onClick={() =>
-          navigate(pathname + item.path.replace("/", "") + "/", {
-            state: { path: "/" + item.path.replace("/", "") + "/" },
-          })
-        }
-        className="flex flex-row items-center text-sm hover:bg-gray-100 p-1 rounded-md gap-1"
-      >
-        <div className="text-right flex gap-2 flex-row items-center">
-          {item.is_dir ? <FolderIcon className="h-4 w-4" /> : <File className="h-4 w-4" />}
-          <p>{item.path.replace(state.path, "")}</p>
-        </div>
-      </button>
-    ));
+  return (
+    <div className="truncate">
+      {items.value
+        ?.filter((item) => (showHidden ? true : !item.is_hidden))
+        .map((item, idx) => (
+          <button
+            disabled={!item.is_dir}
+            key={idx}
+            onClick={() =>
+              navigate(pathname + item.path.replace("/", "") + "/", {
+                state: { path: "/" + item.path.replace("/", "") + "/" },
+              })
+            }
+            className="flex flex-row items-center text-sm hover:bg-gray-100 p-1 rounded-md gap-1"
+          >
+            <div className="text-right flex gap-2 flex-row items-center">
+              {item.is_dir ? <FolderIcon className="h-4 w-4" /> : <File className="h-4 w-4" />}
+              <p className="truncate">{item.path.replace(state.path, "")}</p>
+            </div>
+          </button>
+        ))}
+    </div>
+  );
 };
 
 export default Folder;
