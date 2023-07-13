@@ -2,6 +2,7 @@ use chrono::{Local, TimeZone};
 use disks::{Disk, DiskKindWrapper};
 use entries::Entry;
 use sysinfo::{DiskExt, System, SystemExt};
+use tauri::{api::http::Body, http::status::StatusCode, http::ResponseBuilder};
 
 mod disks;
 mod entries;
@@ -93,6 +94,18 @@ async fn get_folder_items(path: String) -> Vec<Entry> {
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![disks, get_folder_items])
+        // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
+        .register_uri_scheme_protocol("reqmedia", move |app, request| {
+            let res_not_img = ResponseBuilder::new()
+                .status(StatusCode::NOT_FOUND)
+                .body(Vec::new());
+
+            if request.method() != "GET" {
+                return res_not_img;
+            };
+
+            res_not_img
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

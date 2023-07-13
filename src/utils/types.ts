@@ -16,3 +16,20 @@ export type TEntry = {
   modified: string;
   name: string;
 };
+
+export type TImage = "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg" | "bmp" | "tiff" | "ico" | "avif";
+export type TVideo =
+  | "mp4"
+  | "webm"
+  | "ogg"
+  | "mov"
+  | "avi"
+  | "wmv"
+  | "flv"
+  | "mkv"
+  | "m4v"
+  | "m4p"
+  | "mpg"
+  | "mpeg"
+  | "3gp"
+  | "3g2";
