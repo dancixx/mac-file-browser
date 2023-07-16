@@ -99,6 +99,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![disks, get_folder_items])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
+        // TODO: to read local files from the app, we need to register a custom protocol
         .register_uri_scheme_protocol("reqmedia", move |_app, request| {
             let res_not_media = ResponseBuilder::new()
                 .status(StatusCode::NOT_FOUND)
@@ -116,10 +117,7 @@ fn main() {
                 Ok(local_file) => ResponseBuilder::new()
                     .status(StatusCode::OK)
                     .body(local_file),
-                Err(err) => {
-                    println!("error: {:?}", err);
-                    res_not_media
-                }
+                Err(_) => res_not_media,
             };
 
             local_file
