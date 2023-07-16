@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from "jotai";
-import { FC } from "react";
+import { FC, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
 import { Slide } from "yet-another-react-lightbox";
@@ -16,6 +16,7 @@ const Folder: FC = () => {
   const items = useAsync(async () => await get_folder_items(state.path), [state.path]);
   const showHidden = useAtomValue(showHiddenAtom);
   const setShowGallery = useSetAtom(showGalleryAtom);
+  const [index, setIndex] = useState(0);
 
   return (
     <>
@@ -27,20 +28,21 @@ const Folder: FC = () => {
               if (checkImage(item.extension)) {
                 return {
                   type: "image",
-                  src: "reqmedia:" + item.path.replace("System/Volumes/Data", ""),
+                  src: item.request_url,
                 } as Slide;
               } else {
                 return {
                   type: "video",
                   sources: [
                     {
-                      src: "reqmedia:" + item.path.replace("System/Volumes/Data", ""),
+                      src: item.request_url,
                     },
                   ],
                 } as Slide;
               }
             }) || []
         }
+        index={index}
       />
       <table className="table-fixed w-full text-xs">
         <thead>
@@ -66,6 +68,7 @@ const Folder: FC = () => {
                       }
 
                       if (checkImage(item.extension) || checkVideo(item.extension)) {
+                        setIndex(idx);
                         setShowGallery(true);
                       }
                     }}

@@ -1,15 +1,23 @@
 use chrono::{Local, TimeZone};
 use disks::{Disk, DiskKindWrapper};
 use entries::Entry;
+use rayon::prelude::*;
+use serde_json::Value;
+use slides::{ImageSlide, Slides, VideoSlide, VideoSource};
 use std::{
-    fs::{read, File},
+    fs::read,
     path::Path,
+    sync::{Arc, Mutex},
 };
 use sysinfo::{DiskExt, System, SystemExt};
-use tauri::{api::file, http::status::StatusCode, http::ResponseBuilder};
+use tauri::{http::status::StatusCode, http::ResponseBuilder, State};
 
 mod disks;
 mod entries;
+mod slides;
+
+#[derive(Default, Debug)]
+struct ActiveFolderItems(Arc<Mutex<Vec<Entry>>>);
 
 #[tauri::command]
 async fn disks() -> Vec<Disk> {
@@ -44,10 +52,10 @@ async fn disks() -> Vec<Disk> {
 
 #[tauri::command]
 async fn get_folder_items(path: String) -> Vec<Entry> {
-    let mut items = Vec::new();
+    let items = Arc::new(Mutex::new(Vec::new()));
     let paths = std::fs::read_dir(path).unwrap();
 
-    for path in paths {
+    paths.par_bridge().for_each(|path| {
         let mut entry = Entry::new();
         let pathname = path.unwrap().path();
         let metadata = pathname.metadata().unwrap();
@@ -75,29 +83,76 @@ async fn get_folder_items(path: String) -> Vec<Entry> {
         };
 
         let pathname = pathname.to_str().unwrap().to_string();
+        let relative_path = pathname.replace("/System/Volumes/Data/", "");
         let name = pathname.split("/").last().unwrap().to_string();
 
+        entry.extension = Some(extension);
         entry.is_dir = Some(metadata.is_dir());
         entry.is_hidden = Some(name.starts_with("."));
+        entry.modified = Some(formatted_time);
         entry.name = Some(name);
         entry.path = Some(pathname);
-        entry.extension = Some(extension);
+        entry.request_url = Some(format!("reqmedia://{}", relative_path));
         entry.size = Some(size);
-        entry.modified = Some(formatted_time);
-        items.push(entry);
-    }
+        items.lock().unwrap().push(entry);
+    });
 
-    items.sort_by(|a, b| {
+    items.lock().unwrap().sort_by(|a, b| {
         let a = a.path.as_ref().unwrap();
         let b = b.path.as_ref().unwrap();
         a.cmp(b)
     });
-    items
+
+    // add actual items to app state
+    let active_folder_items = ActiveFolderItems::default();
+    *active_folder_items.0.lock().unwrap() = items.lock().unwrap().clone();
+
+    let entries = active_folder_items.0.lock().unwrap().clone();
+    entries
+}
+
+#[tauri::command]
+fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Value {
+    // TODO: not working
+    let active_folder_items = active_folder_items.0.lock().unwrap();
+    println!("active_folder_items: {:?}", active_folder_items);
+    let mut slides = Slides::new();
+
+    active_folder_items
+        .iter()
+        .for_each(|item| match item.extension.as_ref().unwrap().as_str() {
+            "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "ico" | "avif" => {
+                let slide = ImageSlide {
+                    r#type: "image".to_string(),
+                    src: item.request_url.as_ref().unwrap().to_string(),
+                };
+
+                slides.images.push(slide);
+            }
+            "mp4" | "ogg" | "ogv" | "webm" => {
+                let slide = VideoSlide {
+                    r#type: "video".to_string(),
+                    sources: vec![VideoSource {
+                        src: item.request_url.as_ref().unwrap().to_string(),
+                    }],
+                };
+
+                slides.videos.push(slide);
+            }
+            _ => {}
+        });
+
+    serde_json::json!(slides)
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![disks, get_folder_items])
+        .manage(ActiveFolderItems::default())
+        .invoke_handler(tauri::generate_handler![
+            disks,
+            get_folder_items,
+            generate_slides
+        ])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
         // TODO: to read local files from the app, we need to register a custom protocol
         .register_uri_scheme_protocol("reqmedia", move |_app, request| {
@@ -111,7 +166,10 @@ fn main() {
 
             let uri = request.uri();
             let file_path = uri.replace("reqmedia://", "/System/Volumes/Data/");
-            let path = Path::new(&file_path);
+            let encoded_file_path = percent_encoding::percent_decode_str(&file_path)
+                .decode_utf8()
+                .unwrap();
+            let path = Path::new(encoded_file_path.as_ref());
 
             let local_file = match read(path) {
                 Ok(local_file) => ResponseBuilder::new()

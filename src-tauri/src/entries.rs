@@ -1,26 +1,28 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry {
-    pub path: Option<String>,
+    pub extension: Option<String>,
     pub is_dir: Option<bool>,
     pub is_hidden: Option<bool>,
-    pub extension: Option<String>,
-    pub size: Option<u64>,
     pub modified: Option<String>,
     pub name: Option<String>,
+    pub path: Option<String>,
+    pub request_url: Option<String>,
+    pub size: Option<u64>,
 }
 
 impl Entry {
     pub fn new() -> Self {
         Self {
-            path: None,
+            extension: None,
             is_dir: None,
             is_hidden: None,
-            extension: None,
-            size: None,
             modified: None,
             name: None,
+            path: None,
+            request_url: None,
+            size: None,
         }
     }
 }

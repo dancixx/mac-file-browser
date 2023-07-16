@@ -8,28 +8,15 @@ export type TDisk = {
 };
 
 export type TEntry = {
-  path: string;
+  extension: string;
   is_dir: boolean;
   is_hidden: boolean;
-  extension: string;
-  size: number;
   modified: string;
   name: string;
+  path: string;
+  request_url: string;
+  size: number;
 };
 
-export type TImage = "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg" | "bmp" | "tiff" | "ico" | "avif";
-export type TVideo =
-  | "mp4"
-  | "webm"
-  | "ogg"
-  | "mov"
-  | "avi"
-  | "wmv"
-  | "flv"
-  | "mkv"
-  | "m4v"
-  | "m4p"
-  | "mpg"
-  | "mpeg"
-  | "3gp"
-  | "3g2";
+export type TImage = "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "ico" | "avif";
+export type TVideo = "mp4" | "ogg" | "ogv" | "webm";

@@ -1787,6 +1787,8 @@ name = "mac-file-browser"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "percent-encoding",
+ "rayon",
  "serde",
  "serde_json",
  "sysinfo",
