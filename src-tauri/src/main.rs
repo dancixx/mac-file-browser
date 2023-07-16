@@ -3,14 +3,14 @@ use disks::{Disk, DiskKindWrapper};
 use entries::Entry;
 use rayon::prelude::*;
 use serde_json::Value;
-use slides::{ImageSlide, Slides, VideoSlide, VideoSource};
+use slides::{ImageSlide, Slide, VideoSlide, VideoSource};
 use std::{
     fs::read,
     path::Path,
     sync::{Arc, Mutex},
 };
 use sysinfo::{DiskExt, System, SystemExt};
-use tauri::{http::status::StatusCode, http::ResponseBuilder, State};
+use tauri::{http::status::StatusCode, http::ResponseBuilder, Error, State};
 
 mod disks;
 mod entries;
@@ -20,7 +20,7 @@ mod slides;
 struct ActiveFolderItems(Arc<Mutex<Vec<Entry>>>);
 
 #[tauri::command]
-async fn disks() -> Vec<Disk> {
+async fn disks() -> Result<Vec<Disk>, Error> {
     let mut disks = Vec::new();
     let mut system = System::new_all();
     system.refresh_disks_list();
@@ -47,11 +47,15 @@ async fn disks() -> Vec<Disk> {
         disks.push(disk_details);
     }
 
-    disks
+    Ok(disks)
 }
 
 #[tauri::command]
-async fn get_folder_items(path: String) -> Vec<Entry> {
+async fn get_folder_items(
+    path: String,
+    show_hidden: bool,
+    active_folder_items: State<'_, ActiveFolderItems>,
+) -> Result<Vec<Entry>, Error> {
     let items = Arc::new(Mutex::new(Vec::new()));
     let paths = std::fs::read_dir(path).unwrap();
 
@@ -94,6 +98,11 @@ async fn get_folder_items(path: String) -> Vec<Entry> {
         entry.path = Some(pathname);
         entry.request_url = Some(format!("reqmedia://{}", relative_path));
         entry.size = Some(size);
+
+        if !show_hidden && entry.is_hidden.unwrap() {
+            return;
+        }
+
         items.lock().unwrap().push(entry);
     });
 
@@ -104,19 +113,16 @@ async fn get_folder_items(path: String) -> Vec<Entry> {
     });
 
     // add actual items to app state
-    let active_folder_items = ActiveFolderItems::default();
     *active_folder_items.0.lock().unwrap() = items.lock().unwrap().clone();
 
     let entries = active_folder_items.0.lock().unwrap().clone();
-    entries
+    Ok(entries)
 }
 
 #[tauri::command]
-fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Value {
-    // TODO: not working
+fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Result<Value, Error> {
     let active_folder_items = active_folder_items.0.lock().unwrap();
-    println!("active_folder_items: {:?}", active_folder_items);
-    let mut slides = Slides::new();
+    let mut slides = vec![];
 
     active_folder_items
         .iter()
@@ -127,7 +133,7 @@ fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Value {
                     src: item.request_url.as_ref().unwrap().to_string(),
                 };
 
-                slides.images.push(slide);
+                slides.push(Slide::Image(slide));
             }
             "mp4" | "ogg" | "ogv" | "webm" => {
                 let slide = VideoSlide {
@@ -137,12 +143,12 @@ fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Value {
                     }],
                 };
 
-                slides.videos.push(slide);
+                slides.push(Slide::Video(slide));
             }
             _ => {}
         });
 
-    serde_json::json!(slides)
+    Ok(serde_json::json!(slides))
 }
 
 fn main() {

@@ -2,48 +2,25 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { FC, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
-import { Slide } from "yet-another-react-lightbox";
 import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
 import Gallery from "../components/gallery";
 import { showGalleryAtom, showHiddenAtom } from "../utils/atoms";
 import { bytesToSize, checkImage, checkVideo } from "../utils/helpers";
-import { get_folder_items } from "../utils/tauri";
+import { generate_slides, get_folder_items } from "../utils/tauri";
 
 const Folder: FC = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const items = useAsync(async () => await get_folder_items(state.path), [state.path]);
   const showHidden = useAtomValue(showHiddenAtom);
   const setShowGallery = useSetAtom(showGalleryAtom);
   const [index, setIndex] = useState(0);
+  const items = useAsync(async () => await get_folder_items(state.path, showHidden), [state.path, showHidden]);
+  const slides = useAsync(async () => await generate_slides(), [items.value]);
 
   return (
     <>
-      <Gallery
-        slides={
-          items.value
-            ?.filter((item) => checkImage(item.extension) || checkVideo(item.extension))
-            .map<Slide>((item) => {
-              if (checkImage(item.extension)) {
-                return {
-                  type: "image",
-                  src: item.request_url,
-                } as Slide;
-              } else {
-                return {
-                  type: "video",
-                  sources: [
-                    {
-                      src: item.request_url,
-                    },
-                  ],
-                } as Slide;
-              }
-            }) || []
-        }
-        index={index}
-      />
+      <Gallery slides={slides.value!} index={index} />
       <table className="table-fixed w-full text-xs">
         <thead>
           <tr>

@@ -1,18 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Slides {
-    pub images: Vec<ImageSlide>,
-    pub videos: Vec<VideoSlide>,
-}
-
-impl Slides {
-    pub fn new() -> Self {
-        Self {
-            images: Vec::new(),
-            videos: Vec::new(),
-        }
-    }
+#[serde(untagged)]
+pub enum Slide {
+    Image(ImageSlide),
+    Video(VideoSlide),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
