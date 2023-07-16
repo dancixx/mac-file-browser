@@ -1,8 +1,37 @@
-# Tauri + React + Typescript
+# Mac Finder 
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A blazing fast file finder for Mac written in Rust 🦀. The purpose of this project is to make my knowledge of Rust better and to learn more about the Rust ecosystem and I really hate the default finder on Mac. The project is still in development and is not ready for use only for testing purposes.
 
-## Recommended IDE Setup
+## Installation
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-# mac-file-browser
+```bash
+yarn tauri build
+```
+
+## Features
+
+- [x] Surfing through directories
+- [x] Open photos and videos
+- [x] Show/Hide hidden files
+
+
+## Future Features
+
+- [ ] Open files with default app
+- [ ] Open files with custom app
+- [ ] Support for more file types
+- [ ] Search for files
+
+
+## Windows and Linux support
+
+I'm planning to add support for Windows and Linux in the future.
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+[MIT](./LICENSE)
+```
+
+
