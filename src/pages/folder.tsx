@@ -1,49 +1,47 @@
-import { open } from "@tauri-apps/api/dialog";
-import { readTextFile } from "@tauri-apps/api/fs";
 import { useAtomValue, useSetAtom } from "jotai";
 import { FC } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
+import { Slide } from "yet-another-react-lightbox";
 import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
+import Gallery from "../components/gallery";
 import { showGalleryAtom, showHiddenAtom } from "../utils/atoms";
 import { bytesToSize, checkImage, checkVideo } from "../utils/helpers";
 import { get_folder_items } from "../utils/tauri";
 
 const Folder: FC = () => {
   const navigate = useNavigate();
-  const { state, pathname } = useLocation();
+  const { state } = useLocation();
   const items = useAsync(async () => await get_folder_items(state.path), [state.path]);
   const showHidden = useAtomValue(showHiddenAtom);
   const setShowGallery = useSetAtom(showGalleryAtom);
 
   return (
     <>
-      {/* <Gallery
+      <Gallery
         slides={
           items.value
             ?.filter((item) => checkImage(item.extension) || checkVideo(item.extension))
-            .map<Slide>(async (item) => {
+            .map<Slide>((item) => {
               if (checkImage(item.extension)) {
                 return {
                   type: "image",
-                  src: await readTextFile(item.path.replace("/System/Volumes/Data/", "/"), {
-                    dir: BaseDirectory.Download,
-                  }),
+                  src: "reqmedia:" + item.path.replace("System/Volumes/Data", ""),
                 } as Slide;
               } else {
                 return {
                   type: "video",
                   sources: [
                     {
-                      src: await readTextFile(item.path.replace("/System/Volumes/Data/", "/")),
+                      src: "reqmedia:" + item.path.replace("System/Volumes/Data", ""),
                     },
                   ],
                 } as Slide;
               }
             }) || []
         }
-      /> */}
+      />
       <table className="table-fixed w-full text-xs">
         <thead>
           <tr>
@@ -68,11 +66,7 @@ const Folder: FC = () => {
                       }
 
                       if (checkImage(item.extension) || checkVideo(item.extension)) {
-                        // setShowGallery(true);
-                        const path = await open({
-                          multiple: false,
-                        });
-                        await readTextFile(path as string);
+                        setShowGallery(true);
                       }
                     }}
                     className="flex flex-row items-center hover:bg-gray-100 p-1 rounded-md gap-1"

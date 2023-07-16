@@ -1,8 +1,12 @@
 use chrono::{Local, TimeZone};
 use disks::{Disk, DiskKindWrapper};
 use entries::Entry;
+use std::{
+    fs::{read, File},
+    path::Path,
+};
 use sysinfo::{DiskExt, System, SystemExt};
-use tauri::{api::http::Body, http::status::StatusCode, http::ResponseBuilder};
+use tauri::{api::file, http::status::StatusCode, http::ResponseBuilder};
 
 mod disks;
 mod entries;
@@ -95,16 +99,30 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![disks, get_folder_items])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
-        .register_uri_scheme_protocol("reqmedia", move |app, request| {
-            let res_not_img = ResponseBuilder::new()
+        .register_uri_scheme_protocol("reqmedia", move |_app, request| {
+            let res_not_media = ResponseBuilder::new()
                 .status(StatusCode::NOT_FOUND)
                 .body(Vec::new());
 
             if request.method() != "GET" {
-                return res_not_img;
+                return res_not_media;
             };
 
-            res_not_img
+            let uri = request.uri();
+            let file_path = uri.replace("reqmedia://", "/System/Volumes/Data/");
+            let path = Path::new(&file_path);
+
+            let local_file = match read(path) {
+                Ok(local_file) => ResponseBuilder::new()
+                    .status(StatusCode::OK)
+                    .body(local_file),
+                Err(err) => {
+                    println!("error: {:?}", err);
+                    res_not_media
+                }
+            };
+
+            local_file
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
