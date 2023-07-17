@@ -1,5 +1,6 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import { FC, useState } from "react";
+import { Document, Page } from "react-pdf";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
 import { ReactComponent as File } from "../assets/file.svg";
@@ -17,9 +18,13 @@ const Folder: FC = () => {
   const [index, setIndex] = useState(0);
   const items = useAsync(async () => await get_folder_items(state.path, showHidden), [state.path, showHidden]);
   const slides = useAsync(async () => await generate_slides(), [items.value]);
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
 
   return (
     <>
+      <Document file={selectedPdf} onLoadError={(error) => console.log(error)}>
+        <Page pageNumber={1} />
+      </Document>
       <Gallery slides={slides.value!} index={index} />
       <table className="table-fixed w-full text-xs">
         <thead>
@@ -47,6 +52,10 @@ const Folder: FC = () => {
                       if (checkImage(item.extension) || checkVideo(item.extension)) {
                         setIndex(idx);
                         setShowGallery(true);
+                      }
+
+                      if (item.extension === "pdf") {
+                        setSelectedPdf(item.request_url);
                       }
                     }}
                     className="flex flex-row items-center hover:bg-gray-100 p-1 rounded-md gap-1"
