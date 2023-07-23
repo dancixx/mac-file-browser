@@ -7,7 +7,10 @@ use slides::{ImageSlide, Slide, VideoSlide, VideoSource};
 use std::{
     fs::read,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicU64, AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
 };
 use sysinfo::{DiskExt, System, SystemExt};
 use tauri::{
@@ -20,7 +23,7 @@ mod entries;
 mod slides;
 
 #[derive(Default, Debug)]
-struct ActiveFolderItems(Arc<Mutex<Vec<Entry>>>);
+struct ActiveFolderItems(Arc<Mutex<FolderData>>);
 
 #[tauri::command]
 async fn disks() -> Result<Vec<Disk>, Error> {
@@ -57,11 +60,11 @@ async fn disks() -> Result<Vec<Disk>, Error> {
 async fn get_folder_items(
     path: String,
     show_hidden: bool,
-    active_folder_items: State<'_, ActiveFolderItems>,
+    active_folder_data: State<'_, ActiveFolderItems>,
 ) -> Result<FolderData, Error> {
-    let folders_count = Arc::new(Mutex::new(0));
-    let files_count = Arc::new(Mutex::new(0));
-    let total_size = Arc::new(Mutex::new(0));
+    let folders_count = AtomicUsize::new(0);
+    let files_count = AtomicUsize::new(0);
+    let total_size = AtomicU64::new(0);
     let items = Arc::new(Mutex::new(Vec::new()));
     let paths = std::fs::read_dir(path).unwrap();
 
@@ -110,11 +113,11 @@ async fn get_folder_items(
         }
 
         if entry.is_dir.unwrap() {
-            *folders_count.lock().unwrap() += 1;
+            folders_count.fetch_add(1, Ordering::SeqCst);
         } else {
-            *files_count.lock().unwrap() += 1;
+            files_count.fetch_add(1, Ordering::SeqCst);
         }
-        *total_size.lock().unwrap() += size;
+        total_size.fetch_add(size, Ordering::SeqCst);
         items.lock().unwrap().push(entry);
     });
 
@@ -125,53 +128,48 @@ async fn get_folder_items(
     });
 
     // add actual items to app state
-    *active_folder_items.0.lock().unwrap() = items.lock().unwrap().clone();
+    let mut active_folder_data_guard = active_folder_data.0.lock().unwrap();
+    active_folder_data_guard.items = items.lock().unwrap().clone();
 
-    let folders_count = *folders_count.lock().unwrap();
-    let files_count = *files_count.lock().unwrap();
-    let total_size = *total_size.lock().unwrap();
-    let entries = active_folder_items.0.lock().unwrap().clone();
+    let items = active_folder_data_guard.items.clone();
     Ok(FolderData {
-        folders_count,
-        files_count,
-        total_size,
-        items: entries,
+        folders_count: folders_count.into_inner(),
+        files_count: files_count.into_inner(),
+        total_size: total_size.into_inner(),
+        items,
     })
 }
 
 #[tauri::command]
-fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Result<Value, Error> {
-    let active_folder_items = active_folder_items.0.lock().unwrap();
+fn generate_slides(active_folder_data: State<'_, ActiveFolderItems>) -> Result<Value, Error> {
+    let items = active_folder_data.0.lock().unwrap().items.clone();
     let mut slides = vec![];
 
-    active_folder_items
-        .iter()
-        .enumerate()
-        .for_each(
-            |(index, item)| match item.extension.as_ref().unwrap().as_str() {
-                "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "ico" | "avif" => {
-                    let slide = ImageSlide {
-                        index,
-                        r#type: "image".to_string(),
+    items.iter().enumerate().for_each(|(index, item)| {
+        match item.extension.as_ref().unwrap().as_str() {
+            "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "ico" | "avif" => {
+                let slide = ImageSlide {
+                    index,
+                    r#type: "image".to_string(),
+                    src: item.request_url.as_ref().unwrap().to_string(),
+                };
+
+                slides.push(Slide::Image(slide));
+            }
+            "mp4" | "ogg" | "ogv" | "webm" => {
+                let slide = VideoSlide {
+                    index,
+                    r#type: "video".to_string(),
+                    sources: vec![VideoSource {
                         src: item.request_url.as_ref().unwrap().to_string(),
-                    };
+                    }],
+                };
 
-                    slides.push(Slide::Image(slide));
-                }
-                "mp4" | "ogg" | "ogv" | "webm" => {
-                    let slide = VideoSlide {
-                        index,
-                        r#type: "video".to_string(),
-                        sources: vec![VideoSource {
-                            src: item.request_url.as_ref().unwrap().to_string(),
-                        }],
-                    };
-
-                    slides.push(Slide::Video(slide));
-                }
-                _ => {}
-            },
-        );
+                slides.push(Slide::Video(slide));
+            }
+            _ => {}
+        }
+    });
 
     Ok(serde_json::json!(slides))
 }
