@@ -7,7 +7,7 @@ import Video from "yet-another-react-lightbox/plugins/video";
 import "yet-another-react-lightbox/styles.css";
 import { showGalleryAtom } from "../utils/atoms";
 
-const Gallery: FC<{ slides: Slide[]; index: number }> = ({ slides, index }) => {
+const Gallery: FC<{ slides: (Slide & { index: number })[]; index: number }> = ({ slides, index }) => {
   const [show, setShow] = useAtom(showGalleryAtom);
 
   return (

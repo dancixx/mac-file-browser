@@ -1,5 +1,6 @@
+import clsx from "clsx";
 import { useAtomValue, useSetAtom } from "jotai";
-import { FC, useState } from "react";
+import { FC, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
 import { ReactComponent as File } from "../assets/file.svg";
@@ -17,11 +18,12 @@ const Folder: FC = () => {
   const [index, setIndex] = useState(0);
   const items = useAsync(async () => await get_folder_items(state.path, showHidden), [state.path, showHidden]);
   const slides = useAsync(async () => await generate_slides(), [items.value]);
+  const slidesStartIndex = useMemo(() => slides.value?.findIndex((slide) => slide.index === index), [slides, index]);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
 
   return (
     <>
-      <Gallery slides={slides.value!} index={index} />
+      <Gallery slides={slides.value!} index={slidesStartIndex!} />
       <table className="table-fixed w-full text-xs">
         <thead>
           <tr>
@@ -56,7 +58,9 @@ const Folder: FC = () => {
                     }}
                     className="flex flex-row items-center hover:bg-gray-100 p-1 rounded-md gap-1"
                   >
-                    <div className="text-right flex gap-2 flex-row items-center">
+                    <div
+                      className={clsx("text-right flex gap-2 flex-row items-center", item.is_hidden && "text-gray-400")}
+                    >
                       {item.is_dir ? <FolderIcon className="h-4 w-4" /> : <File className="h-4 w-4" />}
                       <p className="truncate">{item.name}</p>
                     </div>

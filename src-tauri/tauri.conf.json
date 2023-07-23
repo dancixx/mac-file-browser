@@ -40,7 +40,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "mac-file-browser",
+        "title": "MacFinder",
         "width": 1024,
         "height": 768
       }

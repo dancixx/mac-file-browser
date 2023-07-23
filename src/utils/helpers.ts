@@ -1,3 +1,4 @@
+import { terminal } from "virtual:terminal";
 import { TImage, TVideo } from "./types";
 
 export const bytesToSize = (bytes: number): string => {
@@ -15,3 +16,5 @@ export const checkVideo = (extension: string): extension is TVideo => {
   const videos = ["mp4", "ogg", "ogv", "webm"] as const;
   return videos.includes(extension as TVideo);
 };
+
+export const terminalConsole = (message: any) => terminal.log(JSON.stringify(message));

@@ -1,12 +1,13 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import svgr from "vite-plugin-svgr";
+import Terminal from "vite-plugin-terminal";
 
 const mobile = process.env.TAURI_PLATFORM === "android" || process.env.TAURI_PLATFORM === "ios";
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react(), svgr()],
+  plugins: [react(), svgr(), Terminal()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   // prevent vite from obscuring rust errors

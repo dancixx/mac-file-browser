@@ -129,64 +129,75 @@ fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Result<
 
     active_folder_items
         .iter()
-        .for_each(|item| match item.extension.as_ref().unwrap().as_str() {
-            "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "ico" | "avif" => {
-                let slide = ImageSlide {
-                    r#type: "image".to_string(),
-                    src: item.request_url.as_ref().unwrap().to_string(),
-                };
-
-                slides.push(Slide::Image(slide));
-            }
-            "mp4" | "ogg" | "ogv" | "webm" => {
-                let slide = VideoSlide {
-                    r#type: "video".to_string(),
-                    sources: vec![VideoSource {
+        .enumerate()
+        .for_each(
+            |(index, item)| match item.extension.as_ref().unwrap().as_str() {
+                "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "ico" | "avif" => {
+                    let slide = ImageSlide {
+                        index,
+                        r#type: "image".to_string(),
                         src: item.request_url.as_ref().unwrap().to_string(),
-                    }],
-                };
+                    };
 
-                slides.push(Slide::Video(slide));
-            }
-            _ => {}
-        });
+                    slides.push(Slide::Image(slide));
+                }
+                "mp4" | "ogg" | "ogv" | "webm" => {
+                    let slide = VideoSlide {
+                        index,
+                        r#type: "video".to_string(),
+                        sources: vec![VideoSource {
+                            src: item.request_url.as_ref().unwrap().to_string(),
+                        }],
+                    };
+
+                    slides.push(Slide::Video(slide));
+                }
+                _ => {}
+            },
+        );
 
     Ok(serde_json::json!(slides))
 }
 
 fn main() {
-    tauri::Builder::default()
-        .menu(
+    let menu = Menu::new()
+        .add_submenu(Submenu::new(
+            "App",
             Menu::new()
-                .add_submenu(Submenu::new(
-                    "App",
-                    Menu::new()
-                        .add_native_item(MenuItem::About(
-                            "About MacFinder".to_string(),
-                            AboutMetadata::new()
-                                .version("0.1.0")
-                                .authors(vec!["Dániel Boros".to_string()])
-                                .license("MIT".to_string())
-                                .website("https://github.com/dancixx/mac-file-browser".to_string()),
-                        ))
-                        .add_native_item(MenuItem::Separator)
-                        .add_native_item(MenuItem::Quit),
+                .add_native_item(MenuItem::About(
+                    "About MacFinder".to_string(),
+                    AboutMetadata::new()
+                        .version("0.1.0")
+                        .authors(vec!["Dániel Boros".to_string()])
+                        .license("MIT".to_string())
+                        .website("https://github.com/dancixx/mac-file-browser".to_string()),
                 ))
-                .add_submenu(Submenu::new(
-                    "View",
-                    Menu::new()
-                        .add_item(CustomMenuItem::new("showHidden", "Show Hidden Files"))
-                        .add_native_item(MenuItem::Separator)
-                        .add_native_item(MenuItem::Cut)
-                        .add_native_item(MenuItem::Copy)
-                        .add_native_item(MenuItem::Paste)
-                        .add_native_item(MenuItem::Separator)
-                        .add_native_item(MenuItem::SelectAll),
-                )),
-        )
+                .add_native_item(MenuItem::Separator)
+                .add_native_item(MenuItem::Quit),
+        ))
+        .add_submenu(Submenu::new(
+            "View",
+            Menu::new()
+                .add_item(
+                    CustomMenuItem::new("showHidden", "Show Hidden Files")
+                        .accelerator("CmdOrCtrl+Shift+."),
+                )
+                .add_native_item(MenuItem::Separator),
+            // .add_native_item(MenuItem::Cut)
+            // .add_native_item(MenuItem::Copy)
+            // .add_native_item(MenuItem::Paste)
+            // .add_native_item(MenuItem::Separator)
+            // .add_native_item(MenuItem::SelectAll),
+        ));
+
+    tauri::Builder::default()
+        .menu(menu)
         .on_menu_event(|event| match event.menu_item_id() {
             "showHidden" => {
-                event.window().emit("showHidden", Some(true)).unwrap();
+                event
+                    .window()
+                    .emit(event.menu_item_id(), Some(true))
+                    .unwrap();
             }
             _ => {}
         })
