@@ -1,6 +1,6 @@
 use chrono::{Local, TimeZone};
 use disks::{Disk, DiskKindWrapper};
-use entries::Entry;
+use entries::{Entry, FolderData};
 use rayon::prelude::*;
 use serde_json::Value;
 use slides::{ImageSlide, Slide, VideoSlide, VideoSource};
@@ -58,7 +58,10 @@ async fn get_folder_items(
     path: String,
     show_hidden: bool,
     active_folder_items: State<'_, ActiveFolderItems>,
-) -> Result<Vec<Entry>, Error> {
+) -> Result<FolderData, Error> {
+    let folders_count = Arc::new(Mutex::new(0));
+    let files_count = Arc::new(Mutex::new(0));
+    let total_size = Arc::new(Mutex::new(0));
     let items = Arc::new(Mutex::new(Vec::new()));
     let paths = std::fs::read_dir(path).unwrap();
 
@@ -106,6 +109,12 @@ async fn get_folder_items(
             return;
         }
 
+        if entry.is_dir.unwrap() {
+            *folders_count.lock().unwrap() += 1;
+        } else {
+            *files_count.lock().unwrap() += 1;
+        }
+        *total_size.lock().unwrap() += size;
         items.lock().unwrap().push(entry);
     });
 
@@ -118,8 +127,16 @@ async fn get_folder_items(
     // add actual items to app state
     *active_folder_items.0.lock().unwrap() = items.lock().unwrap().clone();
 
+    let folders_count = *folders_count.lock().unwrap();
+    let files_count = *files_count.lock().unwrap();
+    let total_size = *total_size.lock().unwrap();
     let entries = active_folder_items.0.lock().unwrap().clone();
-    Ok(entries)
+    Ok(FolderData {
+        folders_count,
+        files_count,
+        total_size,
+        items: entries,
+    })
 }
 
 #[tauri::command]

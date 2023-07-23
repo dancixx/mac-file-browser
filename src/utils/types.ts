@@ -7,6 +7,13 @@ export type TDisk = {
   available_space: number;
 };
 
+export type TFolderData = {
+  folders_count: number;
+  files_count: number;
+  total_size: number;
+  items: TEntry[];
+};
+
 export type TEntry = {
   extension: string;
   is_dir: boolean;

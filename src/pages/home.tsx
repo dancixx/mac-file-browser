@@ -2,9 +2,11 @@ import { FC } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
 import { ReactComponent as SSD } from "../assets/ssd.svg";
+import { useClearFolderData } from "../hooks/useClearFolderData";
 import { get_disks } from "../utils/tauri";
 
 const Home: FC = () => {
+  useClearFolderData();
   const navigate = useNavigate();
   const disks = useAsync(async () => await get_disks(), []);
 

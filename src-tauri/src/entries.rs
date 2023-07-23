@@ -1,6 +1,14 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FolderData {
+    pub folders_count: usize,
+    pub files_count: usize,
+    pub total_size: u64,
+    pub items: Vec<Entry>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry {
     pub extension: Option<String>,
     pub is_dir: Option<bool>,

@@ -6,7 +6,7 @@ import { useAsync } from "react-use";
 import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
 import Gallery from "../components/gallery";
-import { showGalleryAtom, showHiddenAtom } from "../utils/atoms";
+import { folderDataAtom, showGalleryAtom, showHiddenAtom } from "../utils/atoms";
 import { bytesToSize, checkImage, checkVideo } from "../utils/helpers";
 import { generate_slides, get_folder_items } from "../utils/tauri";
 
@@ -16,7 +16,18 @@ const Folder: FC = () => {
   const showHidden = useAtomValue(showHiddenAtom);
   const setShowGallery = useSetAtom(showGalleryAtom);
   const [index, setIndex] = useState(0);
-  const items = useAsync(async () => await get_folder_items(state.path, showHidden), [state.path, showHidden]);
+  const setFolderData = useSetAtom(folderDataAtom);
+  const items = useAsync(async () => {
+    const data = await get_folder_items(state.path, showHidden);
+
+    setFolderData({
+      total_size: data.total_size,
+      files_count: data.files_count,
+      folders_count: data.folders_count,
+    });
+
+    return data.items;
+  }, [state.path, showHidden]);
   const slides = useAsync(async () => await generate_slides(), [items.value]);
   const slidesStartIndex = useMemo(() => slides.value?.findIndex((slide) => slide.index === index), [slides, index]);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
