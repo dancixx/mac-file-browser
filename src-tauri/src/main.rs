@@ -10,7 +10,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 use sysinfo::{DiskExt, System, SystemExt};
-use tauri::{http::status::StatusCode, http::ResponseBuilder, Error, State};
+use tauri::{
+    http::status::StatusCode, http::ResponseBuilder, AboutMetadata, CustomMenuItem, Error, Menu,
+    MenuItem, State, Submenu,
+};
 
 mod disks;
 mod entries;
@@ -153,6 +156,40 @@ fn generate_slides(active_folder_items: State<'_, ActiveFolderItems>) -> Result<
 
 fn main() {
     tauri::Builder::default()
+        .menu(
+            Menu::new()
+                .add_submenu(Submenu::new(
+                    "App",
+                    Menu::new()
+                        .add_native_item(MenuItem::About(
+                            "About MacFinder".to_string(),
+                            AboutMetadata::new()
+                                .version("0.1.0")
+                                .authors(vec!["Dániel Boros".to_string()])
+                                .license("MIT".to_string())
+                                .website("https://github.com/dancixx/mac-file-browser".to_string()),
+                        ))
+                        .add_native_item(MenuItem::Separator)
+                        .add_native_item(MenuItem::Quit),
+                ))
+                .add_submenu(Submenu::new(
+                    "View",
+                    Menu::new()
+                        .add_item(CustomMenuItem::new("showHidden", "Show Hidden Files"))
+                        .add_native_item(MenuItem::Separator)
+                        .add_native_item(MenuItem::Cut)
+                        .add_native_item(MenuItem::Copy)
+                        .add_native_item(MenuItem::Paste)
+                        .add_native_item(MenuItem::Separator)
+                        .add_native_item(MenuItem::SelectAll),
+                )),
+        )
+        .on_menu_event(|event| match event.menu_item_id() {
+            "showHidden" => {
+                event.window().emit("showHidden", Some(true)).unwrap();
+            }
+            _ => {}
+        })
         .manage(ActiveFolderItems::default())
         .invoke_handler(tauri::generate_handler![
             disks,
