@@ -1,11 +1,13 @@
+import { useAtom } from "jotai";
 import { FC, PropsWithChildren } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ReactComponent as Back } from "../assets/back.svg";
+import { showHiddenAtom } from "../utils/atoms";
 
 const Layout: FC<PropsWithChildren> = ({ children }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  //const showHidden = useAtomValue(showHiddenAtom);
+  const [showHidden, setShowHidden] = useAtom(showHiddenAtom);
 
   return (
     <div className="p-4 font-poppins">
@@ -18,7 +20,7 @@ const Layout: FC<PropsWithChildren> = ({ children }) => {
         </div>
         {/* <div className="flex flex-row items-center justify-center gap-1">
           <p className="text-gray-400">Show hidden files</p>
-          <input type="checkbox" checked={showHidden} />
+          <input type="checkbox" checked={showHidden} onChange={() => setShowHidden(!showHidden)} />
         </div> */}
       </div>
       {children}

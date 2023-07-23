@@ -13,7 +13,6 @@ const Folder: FC = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const showHidden = useAtomValue(showHiddenAtom);
-  console.log(showHidden);
   const setShowGallery = useSetAtom(showGalleryAtom);
   const [index, setIndex] = useState(0);
   const items = useAsync(async () => await get_folder_items(state.path, showHidden), [state.path, showHidden]);
