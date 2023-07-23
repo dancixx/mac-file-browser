@@ -5,6 +5,7 @@ import Layout from "./components/layout";
 import { useWindowEvent } from "./hooks/useWindowEvent";
 import Folder from "./pages/folder";
 import Home from "./pages/home";
+import Search from "./pages/search";
 import { showHiddenAtom } from "./utils/atoms";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.js", import.meta.url).toString();
@@ -18,6 +19,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/disk/:name/*" element={<Folder />} />
         </Routes>
       </Layout>

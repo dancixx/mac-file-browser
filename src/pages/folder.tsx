@@ -9,7 +9,7 @@ import { ReactComponent as FolderIcon } from "../assets/folder.svg";
 import Gallery from "../components/gallery";
 import { folderDataAtom, showGalleryAtom, showHiddenAtom } from "../utils/atoms";
 import { bytesToSize, checkImage, checkVideo } from "../utils/helpers";
-import { generate_slides, get_folder_items } from "../utils/tauri";
+import { generate_slides, get_dir_items } from "../utils/tauri";
 
 const Folder: FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const Folder: FC = () => {
   const [index, setIndex] = useState(0);
   const setFolderData = useSetAtom(folderDataAtom);
   const items = useAsync(async () => {
-    const data = await get_folder_items(state.path, showHidden);
+    const data = await get_dir_items(state.path, showHidden);
 
     setFolderData({
       total_size: data.total_size,

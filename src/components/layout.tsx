@@ -9,6 +9,7 @@ import { ReactComponent as HiddenFiles } from "../assets/hiddenFiles.svg";
 import { ReactComponent as SSD } from "../assets/ssd.svg";
 import { folderDataAtom, showHiddenAtom } from "../utils/atoms";
 import { bytesToSize } from "../utils/helpers";
+import { seach_in_dir } from "../utils/tauri";
 
 const Layout: FC<PropsWithChildren> = ({ children }) => {
   const navigate = useNavigate();
@@ -19,11 +20,19 @@ const Layout: FC<PropsWithChildren> = ({ children }) => {
   return (
     <div className="font-poppins flex justify-between flex-col h-screen">
       <div className="flex flex-col gap-4 mb-4 text-xs p-4">
-        <div className="flex w-1/2 flex-row items-center justify-start gap-1 truncate">
-          <button onClick={() => navigate(-1)} className="hover:bg-gray-200 rounded-full p-1">
-            <Back className="h-4 w-4" />
-          </button>
-          <p className="text-gray-400 truncate text">{pathname}</p>
+        <div className="flex flex-row justify-between">
+          <div className="flex w-1/2 flex-row items-center justify-start gap-1 truncate">
+            <button onClick={() => navigate(-1)} className="hover:bg-gray-200 rounded-full p-1">
+              <Back className="h-4 w-4" />
+            </button>
+            <p className="text-gray-400 truncate text">{pathname}</p>
+          </div>
+          <input
+            type="text"
+            onChange={(event) => seach_in_dir(event.target.value)}
+            placeholder="Search"
+            className="w-1/3 rounded-md p-2 border-2"
+          />
         </div>
         {children}
       </div>

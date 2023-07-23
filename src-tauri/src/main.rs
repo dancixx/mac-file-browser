@@ -1,3 +1,5 @@
+use async_recursion::async_recursion;
+use async_std::task;
 use chrono::{Local, TimeZone};
 use disks::{Disk, DiskKindWrapper};
 use entries::{Entry, FolderData};
@@ -5,7 +7,7 @@ use rayon::prelude::*;
 use serde_json::Value;
 use slides::{ImageSlide, Slide, VideoSlide, VideoSource};
 use std::{
-    fs::read,
+    fs::{read, read_dir},
     path::Path,
     sync::{
         atomic::{AtomicU64, AtomicUsize, Ordering},
@@ -57,7 +59,7 @@ async fn disks() -> Result<Vec<Disk>, Error> {
 }
 
 #[tauri::command]
-async fn get_folder_items(
+async fn get_dir_items(
     path: String,
     show_hidden: bool,
     active_folder_data: State<'_, ActiveFolderItems>,
@@ -141,7 +143,7 @@ async fn get_folder_items(
 }
 
 #[tauri::command]
-fn generate_slides(active_folder_data: State<'_, ActiveFolderItems>) -> Result<Value, Error> {
+async fn generate_slides(active_folder_data: State<'_, ActiveFolderItems>) -> Result<Value, Error> {
     let items = active_folder_data.0.lock().unwrap().items.clone();
     let mut slides = vec![];
 
@@ -172,6 +174,33 @@ fn generate_slides(active_folder_data: State<'_, ActiveFolderItems>) -> Result<V
     });
 
     Ok(serde_json::json!(slides))
+}
+
+#[tauri::command]
+#[async_recursion]
+async fn seach_in_dir(keyword: String) -> Result<(), Error> {
+    let root_dir = Path::new("/System/Volumes/Data/");
+    let entries = read_dir(root_dir).unwrap();
+
+    for entry in entries {
+        let entry = entry.unwrap();
+        let path = entry.path();
+
+        if let Some(filename) = path.file_name() {
+            if let Some(filename) = filename.to_str() {
+                if filename.contains(&keyword) {
+                    println!("Found {} in {}", keyword, filename);
+                }
+            }
+        }
+
+        let keyword = keyword.clone();
+        if path.is_dir() {
+            task::spawn(seach_in_dir(keyword)).await?;
+        }
+    }
+
+    Ok(())
 }
 
 fn main() {
@@ -219,8 +248,9 @@ fn main() {
         .manage(ActiveFolderItems::default())
         .invoke_handler(tauri::generate_handler![
             disks,
-            get_folder_items,
-            generate_slides
+            get_dir_items,
+            generate_slides,
+            seach_in_dir
         ])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
         // TODO: to read local files from the app, we need to register a custom protocol
