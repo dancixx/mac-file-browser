@@ -6,10 +6,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAsync } from "react-use";
 import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
-import Gallery from "../components/gallery";
 import { folderDataAtom, showGalleryAtom, showHiddenAtom } from "../store/atoms";
 import { bytesToSize, checkImage, checkVideo } from "../utils/helpers";
-import { generate_slides, get_dir_items } from "../utils/tauri";
+import { get_dir_items } from "../utils/tauri";
 
 const ListView: FC = () => {
   const navigate = useNavigate();
@@ -35,8 +34,8 @@ const ListView: FC = () => {
 
     return items.value?.slice(0, end) ?? [];
   }, [items, page]);
-  const slides = useAsync(async () => await generate_slides(), [items.value]);
-  const slidesStartIndex = useMemo(() => slides.value?.findIndex((slide) => slide.index === index), [slides, index]);
+  // const slides = useAsync(async () => await generate_slides(), [items.value]);
+  // const slidesStartIndex = useMemo(() => slides.value?.findIndex((slide) => slide.index === index), [slides, index]);
   const { ref, inView } = useInView({
     threshold: 1,
     onChange: (inView) => {
@@ -48,7 +47,7 @@ const ListView: FC = () => {
 
   return (
     <>
-      <Gallery slides={slides.value!} index={slidesStartIndex!} />
+      {/* <Gallery slides={slides.value!} index={slidesStartIndex!} /> */}
       <table className="table-fixed w-full text-xs">
         <thead>
           <tr>
