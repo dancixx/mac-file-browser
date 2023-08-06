@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { FC, useCallback, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { ReactComponent as Chevron } from "../assets/chevron.svg";
 import { showHiddenAtom } from "../store/atoms";
 import { get_dir_items } from "../utils/tauri";
@@ -7,10 +7,10 @@ import { TEntry } from "../utils/types";
 
 const RecursiveFolder: FC<{ items: TEntry[] }> = ({ items }) => {
   const showHidden = useAtomValue(showHiddenAtom);
-  const [nestedItems, setNestedItems] = useState<Record<string, TEntry[]>>(
-    items.reduce((acc, item) => ({ ...acc, [item.path]: [] }), {})
-  );
-  console.log(nestedItems);
+  const [nestedItems, setNestedItems] = useState<Record<string, TEntry[]>>({});
+  useEffect(() => {
+    setNestedItems((prev) => items?.reduce((acc, item) => ({ ...acc, [item.path]: prev ? prev[item.path] : [] }), {}));
+  }, [items]);
   const [showNested, setShowNested] = useState<Record<string, boolean>>({});
   const toggleNested = useCallback(
     (path: string) => {
@@ -21,6 +21,7 @@ const RecursiveFolder: FC<{ items: TEntry[] }> = ({ items }) => {
 
   return items?.map((item, _, array) => {
     const dirs = array.filter((item) => item.is_dir);
+
     if (!item.is_dir)
       return (
         <div key={item.path} className={"cursor-pointer" + (!!dirs.length ? " ml-5" : " ml-1")}>

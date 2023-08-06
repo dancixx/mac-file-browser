@@ -7,7 +7,7 @@ import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
 import { ReactComponent as HiddenFiles } from "../assets/hiddenFiles.svg";
 import { ReactComponent as SSD } from "../assets/ssd.svg";
-import { folderDataAtom, showHiddenAtom } from "../store/atoms";
+import { folderDataAtom, showHiddenAtom, viewModeAtom } from "../store/atoms";
 import { bytesToSize } from "../utils/helpers";
 import { seach_in_dir } from "../utils/tauri";
 
@@ -16,6 +16,7 @@ const Layout: FC<PropsWithChildren> = ({ children }) => {
   const { pathname } = useLocation();
   const [showHidden, setShowHidden] = useAtom(showHiddenAtom);
   const folderData = useAtomValue(folderDataAtom);
+  const [viewMode, setViewMode] = useAtom(viewModeAtom);
 
   return (
     <div className="font-poppins flex justify-between flex-col h-screen">
@@ -36,8 +37,22 @@ const Layout: FC<PropsWithChildren> = ({ children }) => {
         </div>
         {children}
       </div>
-      <div className="flex min-h-[40px] flex-row items-center sticky justify-end gap-1 mt-4 p-2 bg-gray-200 bottom-0">
-        {folderData && (
+      <div className="flex min-h-[40px] flex-row items-center sticky justify-end gap-1 mt-4 p-2 bg-gray-200 bottom-0 text-xs">
+        <button
+          onClick={() => {
+            if (viewMode === "list") {
+              setViewMode("tree");
+            }
+
+            if (viewMode === "tree") {
+              setViewMode("list");
+            }
+          }}
+          className="text-gray-400 mr-2 hover:bg-white py-1 px-2 rounded-lg transition-all"
+        >
+          {viewMode === "list" ? "Tree" : "List"}
+        </button>
+        {viewMode === "list" && folderData && (
           <div className="flex flex-row text-xs gap-3">
             {!!folderData.folders_count && (
               <div className="flex flex-row gap-1">
