@@ -13,6 +13,7 @@ yarn tauri build
 - [x] Surfing through directories
 - [x] Open photos and videos
 - [x] Show/Hide hidden files
+- [x] Tree view @alpha
 
 
 ## Future Features
