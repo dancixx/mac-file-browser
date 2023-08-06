@@ -3,10 +3,10 @@ import { pdfjs } from "react-pdf";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout";
 import { useWindowEvent } from "./hooks/useWindowEvent";
-import Folder from "./pages/folder";
 import Home from "./pages/home";
 import Search from "./pages/search";
-import { showHiddenAtom } from "./utils/atoms";
+import View from "./pages/view";
+import { showHiddenAtom } from "./store/atoms";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.js", import.meta.url).toString();
 
@@ -20,7 +20,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
-          <Route path="/disk/:name/*" element={<Folder />} />
+          <Route path="/disk/:name/*" element={<View />} />
         </Routes>
       </Layout>
     </BrowserRouter>

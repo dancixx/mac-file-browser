@@ -1,7 +1,7 @@
 import { useSetAtom } from "jotai";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { folderDataAtom } from "../utils/atoms";
+import { folderDataAtom } from "../store/atoms";
 
 const useClearFolderData = () => {
   const location = useLocation();

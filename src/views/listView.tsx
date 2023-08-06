@@ -7,11 +7,11 @@ import { useAsync } from "react-use";
 import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
 import Gallery from "../components/gallery";
-import { folderDataAtom, showGalleryAtom, showHiddenAtom } from "../utils/atoms";
+import { folderDataAtom, showGalleryAtom, showHiddenAtom } from "../store/atoms";
 import { bytesToSize, checkImage, checkVideo } from "../utils/helpers";
 import { generate_slides, get_dir_items } from "../utils/tauri";
 
-const Folder: FC = () => {
+const ListView: FC = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const showHidden = useAtomValue(showHiddenAtom);
@@ -101,4 +101,4 @@ const Folder: FC = () => {
   );
 };
 
-export default Folder;
+export default ListView;

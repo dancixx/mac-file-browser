@@ -7,7 +7,7 @@ import { ReactComponent as File } from "../assets/file.svg";
 import { ReactComponent as FolderIcon } from "../assets/folder.svg";
 import { ReactComponent as HiddenFiles } from "../assets/hiddenFiles.svg";
 import { ReactComponent as SSD } from "../assets/ssd.svg";
-import { folderDataAtom, showHiddenAtom } from "../utils/atoms";
+import { folderDataAtom, showHiddenAtom } from "../store/atoms";
 import { bytesToSize } from "../utils/helpers";
 import { seach_in_dir } from "../utils/tauri";
 
