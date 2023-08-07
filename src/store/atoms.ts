@@ -5,3 +5,4 @@ export const viewModeAtom = atom<"list" | "tree">("list");
 export const showHiddenAtom = atom(false);
 export const folderDataAtom = atom<null | Partial<TFolderData>>(null);
 export const showGalleryAtom = atom(false);
+export const treeViewLastSelectedAtom = atom<string | null>(null);

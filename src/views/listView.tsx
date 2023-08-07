@@ -48,7 +48,7 @@ const ListView: FC = () => {
   return (
     <>
       {/* <Gallery slides={slides.value!} index={slidesStartIndex!} /> */}
-      <table className="table-fixed w-full text-xs">
+      <table className="table-fixed w-full">
         <thead>
           <tr>
             <th className="text-left">Name</th>
