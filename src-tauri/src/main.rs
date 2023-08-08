@@ -1,6 +1,7 @@
 use async_recursion::async_recursion;
 use async_std::task;
 use chrono::{Local, TimeZone};
+use disk_index::index_dirs;
 use disks::{Disk, DiskKindWrapper};
 use entries::{Entry, FolderData};
 use rayon::prelude::*;
@@ -20,6 +21,7 @@ use tauri::{
     MenuItem, State, Submenu,
 };
 
+mod disk_index;
 mod disks;
 mod entries;
 mod slides;
@@ -250,6 +252,7 @@ fn main() {
             disks,
             get_dir_items,
             generate_slides,
+            index_dirs,
             seach_in_dir
         ])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
