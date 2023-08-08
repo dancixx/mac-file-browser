@@ -1,4 +1,5 @@
 use indicatif::ProgressBar;
+use rayon::prelude::*;
 use std::{
     path::Path,
     sync::{Arc, Mutex},
@@ -39,21 +40,24 @@ pub async fn index_dirs() {
 
 pub fn visit_dirs(dir: &Path, index: Arc<Mutex<SSDIndex>>, progress: ProgressBar) {
     if dir.is_dir() {
-        for entry in dir.read_dir().unwrap() {
-            if entry.is_err() {
-                continue;
-            }
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_dir() {
-                visit_dirs(&path, index.clone(), progress.clone());
-            } else {
-                index
-                    .lock()
-                    .unwrap()
-                    .add(path.to_str().unwrap().to_string());
+        if let Ok(entries) = dir.read_dir() {
+            for entry in entries {
+                match entry {
+                    Ok(entry) => {
+                        let path = entry.path();
+                        if path.is_dir() {
+                            visit_dirs(&path, index.clone(), progress.clone());
+                        } else {
+                            index
+                                .lock()
+                                .unwrap()
+                                .add(path.to_str().unwrap().to_string());
+                        }
+                    }
+                    Err(_) => continue,
+                }
+                progress.inc(1);
             }
         }
-        progress.inc(1);
     }
 }
