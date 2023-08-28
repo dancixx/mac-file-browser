@@ -60,7 +60,7 @@ const ListView: FC = () => {
         <tbody>
           {paginatedItems?.map((item, idx) => (
             <tr key={idx}>
-              <td className="text-left overflow-hidden">
+              <td className="text-left overflow-hidden select-none">
                 <button
                   onClick={async () => {
                     if (item.is_dir) {

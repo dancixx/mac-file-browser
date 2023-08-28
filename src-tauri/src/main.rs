@@ -238,6 +238,7 @@ fn main() {
 
     tauri::Builder::default()
         .menu(menu)
+        .plugin(tauri_plugin_context_menu::init())
         .on_menu_event(|event| match event.menu_item_id() {
             "showHidden" => {
                 event

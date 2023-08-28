@@ -1,4 +1,6 @@
+import { invoke } from "@tauri-apps/api";
 import { useAtom } from "jotai";
+import { useEffect } from "react";
 import { pdfjs } from "react-pdf";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout";
@@ -13,7 +15,39 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.j
 function App() {
   const [showHidden, setShowHidden] = useAtom(showHiddenAtom);
   useWindowEvent("showHidden", () => setShowHidden(!showHidden));
+  useEffect(() => {
+    window.addEventListener("contextmenu", async (e) => {
+      e.preventDefault();
 
+      // Show the context menu
+      invoke("plugin:context_menu|show_context_menu", {
+        items: [
+          {
+            label: "Item 1",
+            disabled: false,
+            event: "item1clicked",
+            shortcut: "ctrl+M",
+            subitems: [
+              {
+                label: "Subitem 1",
+                disabled: true,
+                event: "subitem1clicked",
+              },
+              {
+                is_separator: true,
+              },
+              {
+                label: "Subitem 2",
+                disabled: false,
+                event: "subitem2clicked",
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+  // useAsync(async () => await invoke("index_dirs"), []);
   return (
     <BrowserRouter>
       <Layout>

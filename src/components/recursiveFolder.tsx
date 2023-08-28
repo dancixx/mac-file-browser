@@ -33,7 +33,7 @@ const RecursiveFolder: FC<{ items: TEntry[] }> = ({ items }) => {
               <div
                 key={item.path}
                 className={
-                  "cursor-pointer flex flex-row hover:bg-gray-100 rounded-md py-1 gap-1" +
+                  "cursor-pointer flex flex-row hover:bg-gray-100 rounded-md py-1 gap-1 select-none" +
                   (!!dirs.length ? " ml-5" : " ml-1")
                 }
               >
@@ -41,7 +41,7 @@ const RecursiveFolder: FC<{ items: TEntry[] }> = ({ items }) => {
                 {item.name}
               </div>
             ) : (
-              <div key={item.path} className="flex flex-col">
+              <div key={item.path} className="flex flex-col select-none">
                 <button
                   onClick={async () => {
                     const data = await get_dir_items(item.path, showHidden);
