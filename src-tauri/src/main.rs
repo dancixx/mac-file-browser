@@ -205,7 +205,8 @@ async fn seach_in_dir(keyword: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let menu = Menu::new()
         .add_submenu(Submenu::new(
             "App",
