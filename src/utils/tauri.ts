@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api";
 import { Slide } from "yet-another-react-lightbox";
 import { TDisk, TFolderData } from "./types";
 
-export const get_disks = async () => await invoke<TDisk[]>("disks");
+export const get_volumes = async () => await invoke<TDisk[]>("get_volumes");
 export const get_dir_items = async (path: string, showHidden: boolean = false) =>
   // TODO: frontend camelCase, backend snake_case
   await invoke<TFolderData>("get_dir_items", { path, showHidden });

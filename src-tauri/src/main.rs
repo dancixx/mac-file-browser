@@ -1,9 +1,9 @@
 use async_recursion::async_recursion;
 use async_std::task;
 use chrono::{Local, TimeZone};
-use disk_index::index_dirs;
-use disks::{Disk, DiskKindWrapper};
+// use disk_index::index_dirs;
 use entries::{Entry, FolderData};
+use file_system::volumes::get_volumes;
 use rayon::prelude::*;
 use serde_json::Value;
 use slides::{ImageSlide, Slide, VideoSlide, VideoSource};
@@ -15,50 +15,18 @@ use std::{
         Arc, Mutex,
     },
 };
-use sysinfo::{DiskExt, System, SystemExt};
 use tauri::{
     http::status::StatusCode, http::ResponseBuilder, AboutMetadata, CustomMenuItem, Error, Menu,
     MenuItem, State, Submenu,
 };
 
 mod disk_index;
-mod disks;
 mod entries;
+mod file_system;
 mod slides;
 
 #[derive(Default, Debug)]
 struct ActiveFolderItems(Arc<Mutex<FolderData>>);
-
-#[tauri::command]
-async fn disks() -> Result<Vec<Disk>, Error> {
-    let mut disks = Vec::new();
-    let mut system = System::new_all();
-    system.refresh_disks_list();
-
-    for disk in system.disks() {
-        let mut disk_details = Disk::new();
-        let total_space = disk.total_space() / 1024_u64.pow(3);
-        let available_space = disk.available_space() / 1024_u64.pow(3);
-        let disk_kind = DiskKindWrapper(disk.kind());
-
-        disk_details.name = Some(disk.name().to_os_string().to_string_lossy().to_string());
-        disk_details.mount_point = Some(disk.mount_point().to_string_lossy().to_string());
-        disk_details.kind = Some(disk_kind.into());
-        disk_details.file_system = Some(
-            disk.file_system()
-                .to_vec()
-                .iter()
-                .map(|&c| c as char)
-                .collect::<String>(),
-        );
-        disk_details.total_space = Some(total_space);
-        disk_details.available_space = Some(available_space);
-
-        disks.push(disk_details);
-    }
-
-    Ok(disks)
-}
 
 #[tauri::command]
 async fn get_dir_items(
@@ -251,10 +219,9 @@ async fn main() {
         })
         .manage(ActiveFolderItems::default())
         .invoke_handler(tauri::generate_handler![
-            disks,
+            get_volumes,
             get_dir_items,
             generate_slides,
-            index_dirs,
             seach_in_dir
         ])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs

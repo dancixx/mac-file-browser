@@ -3,6 +3,7 @@ import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { pdfjs } from "react-pdf";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useAsync } from "react-use";
 import Layout from "./components/layout";
 import { useWindowEvent } from "./hooks/useWindowEvent";
 import Home from "./pages/home";
@@ -47,7 +48,7 @@ function App() {
       });
     });
   });
-  // useAsync(async () => await invoke("index_dirs"), []);
+  useAsync(async () => await invoke("index_dirs"), []);
   return (
     <BrowserRouter>
       <Layout>
