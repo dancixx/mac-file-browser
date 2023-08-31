@@ -39,7 +39,7 @@ pub async fn index_dirs() {
 
     WalkDir::new(root_dir)
         .into_iter()
-        //.par_bridge()
+        .par_bridge()
         .filter_map(Result::ok)
         .for_each(|e| {
             index

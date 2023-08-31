@@ -27,6 +27,9 @@ indicatif = "0.17.6"
 tauri-plugin-context-menu = "0.4.0"
 sqlx = { version = "0.7.1", features = ["runtime-tokio", "tls-rustls", "sqlite"] }
 tokio = { version = "1.32.0", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+dotenvy = "0.15.7"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

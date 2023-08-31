@@ -1,6 +1,7 @@
 import { terminal } from "virtual:terminal";
 import { TImage, TVideo } from "./types";
 
+// TODO: move to Rust side
 export const bytesToSize = (bytes: number): string => {
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   if (!bytes) return "0 Byte";

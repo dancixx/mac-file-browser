@@ -2159,6 +2159,7 @@ dependencies = [
  "async-recursion",
  "async-std",
  "chrono",
+ "dotenvy",
  "indicatif",
  "percent-encoding",
  "rayon",
@@ -2170,6 +2171,8 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-context-menu",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "walkdir",
 ]
 

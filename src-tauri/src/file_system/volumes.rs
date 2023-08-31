@@ -1,6 +1,10 @@
 use serde::Serialize;
+use sqlx::{Pool, Sqlite};
 use sysinfo::{Disk, DiskExt, System, SystemExt};
-use tauri::Error;
+use tauri::{Error, Result, State};
+use tracing::debug;
+
+use crate::state::AppState;
 
 #[derive(Serialize, Debug)]
 pub struct Volume {
@@ -46,16 +50,40 @@ impl From<&Disk> for Volume {
     }
 }
 
+impl Volume {
+    #[allow(dead_code)]
+    pub async fn create_cache(&self, db: &Pool<Sqlite>, volume: String) {
+        let mut connection = db.acquire().await.unwrap();
+
+        // Check if table for this volume exists
+        let table_exists =
+            sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name='{?}';")
+                .bind(&volume)
+                .fetch_optional(&mut *connection)
+                .await
+                .unwrap();
+
+        if table_exists.is_none() {
+            debug!("Table for {} does not exist", volume);
+        } else {
+            debug!("Table for {} exists", volume);
+        }
+    }
+}
+
 #[tauri::command]
-pub async fn get_volumes() -> Result<Vec<Volume>, Error> {
-    let mut disks = Vec::new();
+pub async fn get_volumes(app_state: State<'_, AppState>) -> Result<Vec<Volume>> {
+    let mut volumes = Vec::new();
     let mut system = System::new_all();
     system.refresh_disks_list();
+    let db = app_state.db.lock().await;
 
     for disk in system.disks() {
         let disk = Volume::from(disk);
-        disks.push(disk);
+        let db = db.as_ref().unwrap();
+        disk.create_cache(db, disk.name.clone().unwrap()).await;
+        volumes.push(disk);
     }
 
-    Ok(disks)
+    Ok(volumes)
 }

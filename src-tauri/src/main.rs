@@ -7,7 +7,10 @@ use file_system::volumes::get_volumes;
 use rayon::prelude::*;
 use serde_json::Value;
 use slides::{ImageSlide, Slide, VideoSlide, VideoSource};
+use sqlx::SqlitePool;
+use state::AppState;
 use std::{
+    env,
     fs::{read, read_dir},
     path::Path,
     sync::{
@@ -16,14 +19,17 @@ use std::{
     },
 };
 use tauri::{
-    http::status::StatusCode, http::ResponseBuilder, AboutMetadata, CustomMenuItem, Error, Menu,
-    MenuItem, State, Submenu,
+    http::status::StatusCode, http::ResponseBuilder, AboutMetadata, CustomMenuItem, Error, Manager,
+    Menu, MenuItem, State, Submenu,
 };
+use tracing::debug;
 
+mod database;
 mod disk_index;
 mod entries;
 mod file_system;
 mod slides;
+mod state;
 
 #[derive(Default, Debug)]
 struct ActiveFolderItems(Arc<Mutex<FolderData>>);
@@ -175,6 +181,11 @@ async fn seach_in_dir(keyword: String) -> Result<(), Error> {
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().unwrap();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
     let menu = Menu::new()
         .add_submenu(Submenu::new(
             "App",
@@ -217,6 +228,9 @@ async fn main() {
             }
             _ => {}
         })
+        .manage(AppState {
+            db: Default::default(),
+        })
         .manage(ActiveFolderItems::default())
         .invoke_handler(tauri::generate_handler![
             get_volumes,
@@ -250,6 +264,23 @@ async fn main() {
             };
 
             local_file
+        })
+        .setup(|app| {
+            database::initialize();
+            let handle = app.handle();
+
+            tokio::spawn(async move {
+                let app_state = handle.state::<AppState>();
+                let db_path = env::var("DATABASE_URL").unwrap();
+
+                let db = SqlitePool::connect(&db_path).await.unwrap();
+                *app_state.db.lock().await = Some(db);
+
+                debug!("Cache database initialized at: {}", db_path);
+                debug!("Database connected: {:?}", app_state.db.lock().await);
+            });
+
+            Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
