@@ -52,21 +52,37 @@ impl From<&Disk> for Volume {
 
 impl Volume {
     #[allow(dead_code)]
-    pub async fn create_cache(&self, db: &Pool<Sqlite>, volume: String) {
+    pub async fn create_cache(&self, db: &Pool<Sqlite>, volume: String) -> Result<()> {
         let mut connection = db.acquire().await.unwrap();
+        let table_name = volume.replace(" ", "_").to_lowercase();
 
         // Check if table for this volume exists
         let table_exists =
             sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name='{?}';")
-                .bind(&volume)
+                .bind(&table_name)
                 .fetch_optional(&mut *connection)
                 .await
                 .unwrap();
 
         if table_exists.is_none() {
-            debug!("Table for {} does not exist", volume);
+            debug!("Creating table for {}:{}", volume, table_name);
+
+            sqlx::query(
+                "CREATE TABLE '{?}' (
+                    id INTEGER PRIMARY KEY,
+                    path TEXT NOT NULL
+                );",
+            )
+            .bind(&table_name)
+            .execute(&mut *connection)
+            .await
+            .unwrap();
+
+            Ok(())
         } else {
-            debug!("Table for {} exists", volume);
+            debug!("Table for {} exists", table_name);
+
+            Ok(())
         }
     }
 }
