@@ -1,12 +1,13 @@
+use crate::state::AppState;
 use serde::Serialize;
 use sqlx::{Pool, Sqlite};
+use std::path::Path;
 use sysinfo::{Disk, DiskExt, System, SystemExt};
-use tauri::{Error, Result, State};
+use tauri::{Result as TauriResult, State};
 use tracing::debug;
+use walkdir::WalkDir;
 
-use crate::state::AppState;
-
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Volume {
     pub name: Option<String>,
     pub mount_point: Option<String>,
@@ -52,9 +53,11 @@ impl From<&Disk> for Volume {
 
 impl Volume {
     #[allow(dead_code)]
-    pub async fn create_cache(&self, db: &Pool<Sqlite>, volume: String) -> Result<()> {
+    pub async fn create_cache(&self, db: &Pool<Sqlite>) {
         let mut connection = db.acquire().await.unwrap();
-        let table_name = volume.replace(" ", "_").to_lowercase();
+        let name = self.name.as_ref().unwrap().to_string();
+        let mount_point = self.mount_point.as_ref().unwrap().to_string();
+        let table_name = name.replace(" ", "_").to_lowercase();
 
         // Check if table for this volume exists
         let table_exists =
@@ -65,7 +68,11 @@ impl Volume {
                 .unwrap();
 
         if table_exists.is_none() {
-            debug!("Creating table for {}:{}", volume, table_name);
+            debug!(
+                "Creating table for {}:{}",
+                self.name.as_ref().unwrap(),
+                table_name
+            );
 
             sqlx::query(
                 "CREATE TABLE '{?}' (
@@ -78,17 +85,36 @@ impl Volume {
             .await
             .unwrap();
 
-            Ok(())
+            // Insert all files in this volume into the database
+            let path = Path::new(&mount_point);
+            //let entries = Arc::new(Mutex::new(Vec::new()));
+            let walk_dir = WalkDir::new(path)
+                .into_iter()
+                // TODO: Figure out how to use rayon with async
+                //.par_bridge()
+                .filter_map(Result::ok);
+
+            for entry in walk_dir {
+                let path_entry = entry.path().to_string_lossy().to_string();
+                sqlx::query("INSERT INTO '{?}' (path) VALUES (?);")
+                    .bind(&table_name)
+                    .bind(&path_entry)
+                    .execute(&mut *connection)
+                    .await
+                    .unwrap();
+
+                debug!("Inserted {} into {}", path_entry, table_name);
+            }
+
+            debug!("Finished indexing {}", table_name);
         } else {
             debug!("Table for {} exists", table_name);
-
-            Ok(())
         }
     }
 }
 
 #[tauri::command]
-pub async fn get_volumes(app_state: State<'_, AppState>) -> Result<Vec<Volume>> {
+pub async fn get_volumes(app_state: State<'_, AppState>) -> TauriResult<Vec<Volume>> {
     let mut volumes = Vec::new();
     let mut system = System::new_all();
     system.refresh_disks_list();
@@ -97,7 +123,7 @@ pub async fn get_volumes(app_state: State<'_, AppState>) -> Result<Vec<Volume>> 
     for disk in system.disks() {
         let disk = Volume::from(disk);
         let db = db.as_ref().unwrap();
-        disk.create_cache(db, disk.name.clone().unwrap()).await;
+        disk.create_cache(db).await;
         volumes.push(disk);
     }
 

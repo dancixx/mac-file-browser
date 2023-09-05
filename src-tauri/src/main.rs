@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use async_std::task;
 use chrono::{Local, TimeZone};
-// use disk_index::index_dirs;
 use entries::{Entry, FolderData};
 use file_system::volumes::get_volumes;
 use rayon::prelude::*;
@@ -25,7 +24,6 @@ use tauri::{
 use tracing::debug;
 
 mod database;
-mod disk_index;
 mod entries;
 mod file_system;
 mod slides;
@@ -236,7 +234,7 @@ async fn main() {
             get_volumes,
             get_dir_items,
             generate_slides,
-            seach_in_dir
+            seach_in_dir,
         ])
         // TODO: build media viewer: https://github.com/mar-m-nak/tauri_imgv/blob/main/src-tauri/src/main.rs
         // TODO: to read local files from the app, we need to register a custom protocol
